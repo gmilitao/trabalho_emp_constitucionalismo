@@ -1,0 +1,5 @@
+Os dados utilizados no trabalho são provenientes do Comparative Constitutions Project:
+
+Elkins, Zachary and Tom Ginsburg. 2022 “Characteristics of National Constitutions, Version 4.0.” Comparative Constitutions Project. Last modified: October 24, 2022. Available at comparativeconstitutionsproject.org.
+
+https://comparativeconstitutionsproject.org/download-data/
