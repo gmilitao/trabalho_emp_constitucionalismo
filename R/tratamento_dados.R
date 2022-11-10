@@ -12,9 +12,9 @@ ccp_orig <- read.csv("./dados/ccpcnc_v4/ccpcnc/ccpcnc_v4.csv")
 setDT(ccp_orig)
 
 
-### Checagem de ordem ----
+### Checagens ----
 
-# ordem ok
+## Checagem de ordem -> ordem ok
 
 #ccp_b_ordenada <- ccp_orig |>
 #  arrange(country, year)
@@ -43,6 +43,42 @@ setDT(ccp_orig)
 #  filter(is.na(id.y))
 
 #rm(ccp_b_ordenada, chec_ccp_or)
+
+## Checagens sistemas constitucionais
+
+# Checagem de consistência entre variáveis syst e systid -> teoricamente não pode
+# haver mais de uma linha com syst==1 dentro de um mesmo systid
+
+
+chec_syst <- ccp_orig[, .(cowcode,
+                          country,
+                          year,
+                          syst,
+                          systid,
+                          c_inforce,
+                          coding_available)]
+
+
+chec_syst[, var_chec_syst := sum(syst), by = systid]
+
+# sistemas constitucionais com inconsistência entre syst e systid
+incons_syst <- unique(chec_syst[!is.na(systid) & var_chec_syst ==0 | var_chec_syst>1],
+       by= c("country","systid"))
+
+#incons_syst |>
+#  group_by(var_chec_syst) |>
+#  count()
+# temos 96 casos de inconsistência entre syst e systid. 95 casos sem cód. 1 em syst
+# e 1 caso (em Malta) com dois syst==1 em duas linhas diferentes.
+# Portanto, para padronizar a variável syst, será necessário corrigi-la mais abaixo
+
+# base de sistemas constitucionais
+
+#syst_const <- unique(chec_syst[!is.na(systid)], by = "systid")
+#syst_const[, ordem_syst := 1:.N, by = "country"]
+
+rm(chec_syst)
+
 
 
 ### Checagem de filtros iniciais ----
@@ -73,33 +109,87 @@ ccp_trab |>
   count()
 
 
-### Criação de variáveis ----
+### CRIAÇÃO DE VARIÁVEIS AUXILIARES ----
 
 
-# id único
+## id único
 ccp_trab <- ccp_trab |>
   mutate(uniqueid = 1:nrow(ccp_trab))
 
-# identificação do primeiro sistema constitucional de cada país (variável primeiroSyst)
-aux <- ccp_trab |>
-  select(cowcode, country, year, syst, systid, c_inforce, uniqueid) |>
-  mutate(primeiroSyst = 1)
+## Correção da VARIÁVEL SYST - identificação de um novo sistema constitucional
+# variável corrigida será a "syst_co"
 
-base_primeiroSyst <- aux[c_inforce == 1, .SD[1], by= c("country")] |>
+prim <- ccp_trab[!is.na(systid), .SD[1], by = systid] |>
+  mutate(syst_co = 1) |>
+  select(uniqueid, syst_co)
+
+
+ccp_trab <- ccp_trab |>
+  left_join(select(incons_syst, systid, var_chec_syst),
+            by = "systid") |>
+  left_join(prim, by = "uniqueid")
+
+# ccriando base para checagem da syst_co
+chec_syst_co <- ccp_trab |>
+  select(cowcode,
+         country,
+         year,
+         syst,
+         syst_co,
+         systid,
+         c_inforce,
+         coding_available) |>
+  filter(!is.na(syst) & syst != syst_co)
+
+# checando as diferenças entre syst e syst_co são exatamente os problemas
+# que foram encontrados anteriormente
+dplyr::setdiff(select(chec_syst_co, -syst_co), select(incons_syst, -var_chec_syst)) # diferença na Serbia 2006 - são de fato 2 sistemas em 2006
+dplyr::setdiff(select(incons_syst, -var_chec_syst), select(chec_syst_co, -syst_co)) # diferença é Malta- ok
+
+
+## identificação do primeiro sistema constitucional de cada país (variável primeiroSyst)
+aux <- ccp_trab |>
+  select(cowcode, country, year, syst_co, systid, c_inforce,coding_available, uniqueid) |>
+  mutate(primeiroSyst = 1, ultimo_ano_syst=1)
+
+
+
+# Para a criação de "primeiroSyst", são retiradas os casos de país-ano sem constituição
+# vigente (c_inforce!=1) e CASOS COM coding_available=0 (em que a codificação não foi feita)
+# mesmo quando há imputação em coding_imputed=1. Para identificar path dependence,
+# a imputação de informações a partir de constituições próximas afeta diretamente
+# o resultado, por isso imputações foram desconsideradas.
+base_primeiroSyst <- aux[c_inforce == 1 & coding_available==1, .SD[1], by= c("country")] |>
   select(uniqueid, primeiroSyst)
 
 ccp_trab <- ccp_trab |>
   left_join(base_primeiroSyst, by = "uniqueid") |>
-  mutate(primeiroSyst = replace_na(ccp_trab$primeiroSyst, 0))
+  mutate(primeiroSyst = case_when(
+    is.na(primeiroSyst) ~ 0,
+    TRUE ~ primeiroSyst
+  ))
 
+
+# criação da variável que identifica o último ano de cada sistema constitucional codificado
+# (variável ultimo_ano_syst).
+
+base_ultimo_ano_syst <- aux[c_inforce==1 & coding_available==1, .SD[.N], by= "systid"] |>
+  select(uniqueid, ultimo_ano_syst)
+
+ccp_trab <- ccp_trab |>
+  left_join(base_ultimo_ano_syst, by = "uniqueid") |>
+  mutate(ultimo_ano_syst = case_when(
+    is.na(ultimo_ano_syst) ~ 0,
+    TRUE ~ ultimo_ano_syst
+  ))
 
 # criação da identificação dos casos que serão trabalhados (variável validos)
 # Serão trabalhados apenas os países-ano em que há novo sistema constitucional, e que, ao mesmo tempo,
-# havia sistema constitucional anterior descrito no banco
+# havia sistema constitucional anterior descrito E CODIFICADO no banco
 
 ccp_trab <- ccp_trab |>
   mutate(validos = case_when(
-    syst==1 & primeiroSyst == 0 ~ 1,
+    syst_co==1 & primeiroSyst == 0 & coding_available==1 ~ 1,
     TRUE ~ 0
   ))
 
@@ -111,16 +201,24 @@ view(ccp_trab |>
        select(cowcode,
               country,
               year,
-              syst,
+              syst_co,
               systid,
               c_inforce,
+              coding_available,
               uniqueid,
               primeiroSyst,
+              ultimo_ano_syst,
               validos
               ))
 
+##OBS: na variável "validos" estão marcadas todas as constituições que têm ao menos uma constituição
+# anterior codificada no banco. A constituição anterior não necessariamente será a imediatamente
+# anterior, pois pode haver casos de constituições imediatamente anteriores que não foram codificadas.
+# exemplo: No Afeganistão, a constituição anterior à de 1979 (systid==825) é a de
+# 1977 (systid==823), pois a constituição de 1978 (systid==824) não foi codificada.
 
-###- CRIANDO VARIÁVEIS DEPENDENTES ----
+
+###- CRIAÇÃO DE VARIÁVEIS DEPENDENTES ----
 
 ## Bicameralismo
 
@@ -161,33 +259,57 @@ ccp_trab <- ccp_trab |>
   ))
 
 
-### Casos Estranhos ----
-
-# ANALISAR MELHOR 265 CASOS COM NA em amend e interp
-# tem a ver com as variáveis coding_available e coding_imputed
-
-# PARA A FINALIDADE DO TRABALHO, NÃO PODEREI USAR OS CASOS COM coding_available=0
-# mesmo quando há imputação em coding_imputed=1. Para identificar path dependence,
-# a imputação de informações a partir de constituições próximas afeta diretamente
-# o resultado
+### Frequências das variáveis dependentes ----
 
 ccp_trab |>
   filter(validos==1) |>
-  group_by(coding_available, coding_imputed, bicameralismo) |>
+  group_by(bicameralismo) |>
+  count()
+
+
+ccp_trab |>
+  filter(validos==1) |>
+  group_by(emend_dificil) |>
   count()
 
 ccp_trab |>
   filter(validos==1) |>
-  group_by(coding_available, coding_imputed, emend_dificil) |>
+  group_by(controle_const) |>
   count()
 
-ccp_trab |>
-  filter(validos==1) |>
-  group_by(coding_available, coding_imputed, controle_const) |>
-  count()
+### CRIAÇÃO DAS VARIÁVEIS INDEPENDENTES ----
 
 
-# filtrando casos de C_INFORCE=0
+# bicameralismo na constituição codificada anterior
+
+#ccp_trab <- ccp_trab |>
 
 
-#
+ccp_trab[ultimo_ano_syst==1 | validos==1,
+         bicameralismo_anterior := ifelse(validos==1,
+                                          shift(bicameralismo,1),
+                                          99),
+         by = country]
+
+## Ao criar a variável "bicameralismo_anterior", identifiquei que MALTA apresentava
+#uma inconsistência no banco. Um mesmo systid (433) constava com duas linhas diferentes
+# marcadas com syst==1.
+
+
+
+# Ver o resultado da criação das variáveis
+
+view(ccp_trab |>
+       select(country,
+              year,
+              syst,
+              systid,
+              systyear,
+              c_inforce,
+              coding_available,
+              primeiroSyst,
+              ultimo_ano_syst,
+              validos,
+              bicameralismo,
+              bicameralismo_anterior
+       ))
