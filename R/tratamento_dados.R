@@ -14,10 +14,35 @@ setDT(ccp_orig)
 
 ### Checagens ----
 
-## Checagem de ordem -> ordem ok
+## Checagem de cowcode e country
 
-#ccp_b_ordenada <- ccp_orig |>
-#  arrange(country, year)
+# Para o cowcode 340, há três nomes de país diferentes, conforme informação abaixo.
+# Nos demais casos, cada cowcode tem apenas um nome correspondente.
+# Para a ordenação, será considerada a variável cowcode e year
+ccp_orig |>
+  select(cowcode, country) |>
+  group_by(cowcode, country) |>
+  count() |>
+  ungroup() |>
+  group_by(cowcode) |>
+  mutate(n_cowcode = n()) |>
+  filter(n_cowcode>1)
+
+## Checagem de cowcode e year
+# Há apenas um caso de cowcode com duplicidade de ano: cowcode 340, ano 2006
+ccp_orig |>
+  select(cowcode, year) |>
+  group_by(cowcode, year) |>
+  count() |>
+  filter(n>1)
+# As duas constituições do cowcode 340 (Serbia) em 2006 são constituições diferentes.
+# Portanto, ambas serão mantidas na base de análise.
+
+
+## Alteração da ordem
+
+ccp_b_ordenada <- ccp_orig |>
+  arrange(cowcode, year)
 
 #chec_ccp_or <- ccp_orig
 
@@ -44,6 +69,7 @@ setDT(ccp_orig)
 
 #rm(ccp_b_ordenada, chec_ccp_or)
 
+
 ## Checagens sistemas constitucionais
 
 # Checagem de consistência entre variáveis syst e systid -> teoricamente não pode
@@ -61,21 +87,17 @@ chec_syst <- ccp_orig[, .(cowcode,
 
 chec_syst[, var_chec_syst := sum(syst), by = systid]
 
-# sistemas constitucionais com inconsistência entre syst e systid
+# sistemas constitucionais com inconsistência entre syst e systid:
 incons_syst <- unique(chec_syst[!is.na(systid) & var_chec_syst ==0 | var_chec_syst>1],
        by= c("country","systid"))
 
 #incons_syst |>
 #  group_by(var_chec_syst) |>
 #  count()
-# temos 96 casos de inconsistência entre syst e systid. 95 casos sem cód. 1 em syst
+# temos 96 casos de inconsistência entre syst e systid, sendo 95 casos sem cód. 1 em syst
 # e 1 caso (em Malta) com dois syst==1 em duas linhas diferentes.
-# Portanto, para padronizar a variável syst, será necessário corrigi-la mais abaixo
+# Portanto, para padronizar a variável syst, será necessário corrigi-la.
 
-# base de sistemas constitucionais
-
-#syst_const <- unique(chec_syst[!is.na(systid)], by = "systid")
-#syst_const[, ordem_syst := 1:.N, by = "country"]
 
 rm(chec_syst)
 
@@ -91,22 +113,22 @@ ccp_trab <- ccp_orig
 # Para decisão se os casos de C_inforce =0 serão mantidos -> não há resultados nas variáveis dependentes para os casos de C_inforce =0. Portanto, serão retirados
 # frequência cruzada com c_inforce e HOUSENUM
 
-ccp_trab |>
-  filter(syst==1) |>
-  group_by(c_inforce, housenum) |>
-  count()
+#ccp_trab |>
+#  filter(syst==1) |>
+#  group_by(c_inforce, housenum) |>
+#  count()
 
 # frequência cruzada com c_inforce e AMNDAMAJ
 
-ccp_trab |>
-  group_by(syst, c_inforce, amndamaj) |>
-  count()
+#ccp_trab |>
+#  group_by(syst, c_inforce, amndamaj) |>
+#  count()
 
 # frequência cruzada com c_inforce e INTERP_1
 
-ccp_trab |>
-  group_by(syst, c_inforce, interp_1) |>
-  count()
+#ccp_trab |>
+#  group_by(syst, c_inforce, interp_1) |>
+#  count()
 
 
 ### CRIAÇÃO DE VARIÁVEIS AUXILIARES ----
@@ -129,22 +151,22 @@ ccp_trab <- ccp_trab |>
             by = "systid") |>
   left_join(prim, by = "uniqueid")
 
-# ccriando base para checagem da syst_co
-chec_syst_co <- ccp_trab |>
-  select(cowcode,
-         country,
-         year,
-         syst,
-         syst_co,
-         systid,
-         c_inforce,
-         coding_available) |>
-  filter(!is.na(syst) & syst != syst_co)
+# ccriando base para checagem da syst_co - CHECAGEM OK
+#chec_syst_co <- ccp_trab |>
+#  select(cowcode,
+#         country,
+#         year,
+#         syst,
+#         syst_co,
+#         systid,
+#         c_inforce,
+#         coding_available) |>
+#  filter(!is.na(syst) & syst != syst_co)
 
 # checando as diferenças entre syst e syst_co são exatamente os problemas
 # que foram encontrados anteriormente
-dplyr::setdiff(select(chec_syst_co, -syst_co), select(incons_syst, -var_chec_syst)) # diferença na Serbia 2006 - são de fato 2 sistemas em 2006
-dplyr::setdiff(select(incons_syst, -var_chec_syst), select(chec_syst_co, -syst_co)) # diferença é Malta- ok
+#dplyr::setdiff(select(chec_syst_co, -syst_co), select(incons_syst, -var_chec_syst)) # diferença na Serbia 2006 - são de fato 2 sistemas em 2006
+#dplyr::setdiff(select(incons_syst, -var_chec_syst), select(chec_syst_co, -syst_co)) # diferença é Malta- ok
 
 
 ## identificação do primeiro sistema constitucional de cada país (variável primeiroSyst)
@@ -201,6 +223,7 @@ view(ccp_trab |>
        select(cowcode,
               country,
               year,
+              syst,
               syst_co,
               systid,
               c_inforce,
@@ -225,13 +248,13 @@ view(ccp_trab |>
 # Códigos 96 nas variáveis legisl e housenum serão consideradas como 0 na variável dummy "bicameralismo",
 # concofme comentários presentes abaixo
 
-ccp_trab |>
-  select(country, year,legisl, legisl_article, legisl_comments, validos) |>
-  filter(legisl == 96 & validos ==1)
+#ccp_trab |>
+#  select(country, year,legisl, legisl_article, legisl_comments, validos) |>
+#  filter(legisl == 96 & validos ==1)
 
-ccp_trab |>
-  select(country, year, housenum, housenum_article, housenum_comments, validos) |>
-  filter(housenum == 96 & validos ==1)
+#ccp_trab |>
+#  select(country, year, housenum, housenum_article, housenum_comments, validos) |>
+#  filter(housenum == 96 & validos ==1)
 
 # criação da variável bicameralismo
 ccp_trab <- ccp_trab |>
@@ -280,10 +303,13 @@ ccp_trab |>
 ### CRIAÇÃO DAS VARIÁVEIS INDEPENDENTES ----
 
 
-# bicameralismo na constituição codificada anterior
+# bicameralismo, emend_dificil e controle_const na constituição codificada anterior
 
-#ccp_trab <- ccp_trab |>
+base_aux_independentes <- ccp_trab |>
+  select(country, year, systid)
 
+
+### VOLTAR AQUI PARA CORRIGIR CÓDIGO ABAIXO
 
 ccp_trab[ultimo_ano_syst==1 | validos==1,
          bicameralismo_anterior := ifelse(validos==1,
