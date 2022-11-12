@@ -14,6 +14,8 @@ setDT(ccp_orig)
 
 ### Checagens ----
 
+## Checagem de syst e systid
+
 ## Checagem de cowcode e country
 
 # Para o cowcode 340, há três nomes de país diferentes, conforme informação abaixo.
@@ -254,13 +256,14 @@ ccp_trab <- ccp_trab |>
     TRUE ~ 0
   ))
 
-# Judicial Review (variável controle_const)
+# Judicial Review (variável jud_review)
 
 ccp_trab <- ccp_trab |>
-  mutate(controle_const = case_when(
+  mutate(jud_review = case_when(
     interp_1 == 1 | interp_2 == 1 | interp_3 == 1 | interp_4==1 ~ 1,
     TRUE ~ 0
   ))
+
 
 
 ### Frequências das variáveis dependentes ----
@@ -283,48 +286,174 @@ ccp_trab |>
 
 ### CRIAÇÃO DAS VARIÁVEIS INDEPENDENTES ----
 
-
-# bicameralismo, emend_dificil e controle_const na constituição codificada anterior
-
 base_aux_independentes <- ccp_trab |>
-  select(cowcode,
-         country,
-         year,
-         systid,
-         bicameralismo,
-         emend_dificil,
-         controle_const,
-         ultimo_ano_syst,
-         validos)
+  filter(ultimo_ano_syst==1 | validos==1)
 
 
-### VOLTAR AQUI PARA CORRIGIR CÓDIGO ABAIXO
+# criação  bicameralismo_ant: se havia ou não bicameralismo na última
+# constituição codificada antes de cada constituição analisada.
 
-ccp_trab[ultimo_ano_syst==1 | validos==1,
-         bicameralismo_anterior := ifelse(validos==1,
-                                          shift(bicameralismo,1),
-                                          99),
-         by = country]
+# emend_dificil_ant: se havia ou não bicameralismo na última
+# constituição codificada antes de cada constituição analisada.
 
-## Ao criar a variável "bicameralismo_anterior", identifiquei que MALTA apresentava
-#uma inconsistência no banco. Um mesmo systid (433) constava com duas linhas diferentes
-# marcadas com syst==1.
+# jud_review_ant: se havia ou não judicial review na última
+# constituição codificada antes de cada constituição analisada.
+
+base_aux_independentes <- base_aux_independentes |>
+  group_by(cowcode) |>
+  mutate(bicameralismo_ant = lag(bicameralismo),
+         emend_dificil_ant = lag(emend_dificil),
+         jud_review_ant = lag(jud_review)) |>
+  ungroup()
 
 
 
-# Ver o resultado da criação das variáveis
-
-view(ccp_trab |>
+view(base_aux_independentes|>
        select(country,
               year,
               syst,
+              syst_co,
               systid,
               systyear,
               c_inforce,
               coding_available,
-              primeiroSyst,
               ultimo_ano_syst,
               validos,
               bicameralismo,
-              bicameralismo_anterior
+              bicameralismo_ant
        ))
+
+
+## cruzamentos iniciais das dependentes com as independentes principais
+
+# bicameralismo X bicameralismo_ant
+
+table(base_aux_independentes$bicameralismo_ant, base_aux_independentes$bicameralismo)
+
+# emend_dificil X emend_dificil_ant
+
+table(base_aux_independentes$emend_dificil_ant, base_aux_independentes$emend_dificil)
+
+# jud_review x jud_review_ant
+
+table(base_aux_independentes$jud_review_ant, base_aux_independentes$jud_review)
+
+# Ver o resultado da criação das variáveis
+
+#view(ccp_trab |>
+#       select(country,
+#              year,
+ #             syst,
+  #            systid,
+   #           systyear,
+    #          c_inforce,
+     #         coding_available,
+      #        primeiroSyst,
+       #       ultimo_ano_syst,
+        #      validos,
+         #     bicameralismo,
+          #    bicameralismo_anterior
+       #))
+
+# trazendo as variáveis independentes para a base ccp_trab
+
+ccp_trab <- ccp_trab |>
+  left_join(
+    select(
+      base_aux_independentes,
+      uniqueid,
+      bicameralismo_ant,
+      emend_dificil_ant,
+      jud_review_ant
+    ),
+    by = "uniqueid"
+  )
+rm(base_aux_independentes)
+
+### filtro na base de trabalho -> apenas constituições válidas ----
+
+ccp_trab_val <- ccp_trab |>
+  filter(validos == 1)
+
+### CRIAÇÃO DAS VARIÁVEIS CONTROLE ----
+
+
+# criação da variável de Poder parlamentar -> De jure measure of Fish and
+# Kroenig’s Parliamentary Power Index. Utilizado na The Endurance of National Constitutions
+
+# lógicas para a criação das variáveis podem ser encontradas no arquivo "coding_rules"
+# dos arquivos de replicação do "The Endurance of National Constitutions (2009)"
+# disponíveis em "https://comparativeconstitutionsproject.org/download-data/".
+
+ccp_trab_val <- ccp_trab_val |>
+  mutate(replace_ex = ifelse(((hospdiss_2 == 1 |
+                                 hospdiss_3 == 1 |
+                                 hospdiss_4 == 1 |
+                                 hospdiss_98 == 1) & (
+                                   hosadiss_2 == 1 |
+                                     hosadiss_3 == 1 |
+                                     hosadiss_4 == 1 |
+                                     hosadiss_10 == 1 |
+                                     hosadiss_98 == 1
+                                 ) & (
+                                   hospdiss_1 != 1 &
+                                     hospdiss_5 != 1 &
+                                     hospdiss_6 != 1 &
+                                     hospdiss_7 != 1 &
+                                     hospdiss_8 != 1 &
+                                     hospdiss_9 != 1 &
+                                     hospdiss_96 != 1 &
+                                     hosadiss_1 != 1 &
+                                     hosadiss_5 != 1 &
+                                     hosadiss_6 != 1 &
+                                     hosadiss_7 != 1 &
+                                     hosadiss_8 != 1 &
+                                     hosadiss_9 != 1 &
+                                     hosadiss_96 != 1
+                                 )
+  ) | (((hogpdiss_3 == 1 |
+           hogpdiss_4 == 1 |
+           hogpdiss_5 == 1 |
+           hogpdiss_98 == 1) & (hogadiss_2 == 1 |
+                                  hogadiss_3 == 1 |
+                                  hogadiss_4 == 1 |
+                                  hogadiss_98 == 1) & (
+                                    hogpdiss_1 != 1 &
+                                      hogpdiss_2 != 1 &
+                                      hogpdiss_6 != 1 &
+                                      hogpdiss_7 != 1 &
+                                      hogpdiss_8 != 1 &
+                                      hogpdiss_9 != 1 &
+                                      hogpdiss_96 != 1 &
+                                      hogadiss_1 != 1 &
+                                      hogadiss_5 != 1 &
+                                      hogadiss_6 != 1 &
+                                      hogadiss_7 != 1 &
+                                      hogadiss_8 != 1 &
+                                      hogadiss_96 != 1
+                                  )
+  )),
+  1,
+  0),
+  serve_min = case_when(cabrestl == 1 | cabrestl ==3 ~ 1,
+                        TRUE ~ 0),
+  interprellate = case_when(intexec >=1 & intexec <=3 ~ 1,
+                            TRUE ~ 0),
+  investigate = case_when(invexe == 1 ~ 1,
+                          TRUE ~ 0),
+  # tive que deixar "oversee_pol" de fora, porque não encontrei "comap" na base
+  )
+
+
+
+
+## Variável de poder do executivo
+
+#(1) the power to initiate legislation; LEG_IN_1==1 ou LEG_IN_2==1 ou LEG_IN_3==1
+#(2) the power to issue decrees; HOSDEC==1 ou HOGDEC==1
+#(3) the power to initiate constitutional amendments; AMNDPROP_1==1 ou AMNDPROP_2==1
+#(4) the power to declare states of emergency; EMDECL==1
+#(5) veto power; LEGAPP==1
+#(6) the power to challenge the constitutionality of legislation; CHALLEG_1==1
+#(7) the power to dissolve the legislature.LEGDISS==1
+
