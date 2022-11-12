@@ -44,31 +44,6 @@ ccp_orig |>
 ccp_b_ordenada <- ccp_orig |>
   arrange(cowcode, year)
 
-#chec_ccp_or <- ccp_orig
-
-#ccp_b_ordenada <- ccp_b_ordenada |>
-#  mutate(id = 1:nrow(ccp_b_ordenada))
-
-#chec_ccp_or <- chec_ccp_or |>
-#  mutate(id = 1:nrow(chec_ccp_or)) |>
-#  select(cowcode, country, year, id) |>
-#  left_join(ccp_b_ordenada |> select(cowcode, country, year, id),
-#            by = (c("cowcode", "country", "year"))) |>
-#  mutate(checagem = case_when(
-#    id.x == id.y ~ "ok",
-#    id.x != id.y ~ "ordem diferente"
-#  ))
-
-#chec_ccp_or |>
-#  group_by(checagem) |>
-#  count()
-
-
-#chec_ccp_or |>
-#  filter(is.na(id.y))
-
-#rm(ccp_b_ordenada, chec_ccp_or)
-
 
 ## Checagens sistemas constitucionais
 
@@ -76,30 +51,30 @@ ccp_b_ordenada <- ccp_orig |>
 # haver mais de uma linha com syst==1 dentro de um mesmo systid
 
 
-chec_syst <- ccp_orig[, .(cowcode,
-                          country,
-                          year,
-                          syst,
-                          systid,
-                          c_inforce,
-                          coding_available)]
+#chec_syst <- ccp_b_ordenada[, .(cowcode,
+#                          country,
+#                          year,
+#                          syst,
+#                          systid,
+#                          c_inforce,
+#                          coding_available)]
 
 
-chec_syst[, var_chec_syst := sum(syst), by = systid]
+#chec_syst[, var_chec_syst := sum(syst), by = systid]
 
 # sistemas constitucionais com inconsistência entre syst e systid:
-incons_syst <- unique(chec_syst[!is.na(systid) & var_chec_syst ==0 | var_chec_syst>1],
-       by= c("country","systid"))
+#incons_syst <- unique(chec_syst[!is.na(systid) & var_chec_syst ==0 | var_chec_syst>1],
+#       by= c("country","systid"))
 
 #incons_syst |>
 #  group_by(var_chec_syst) |>
 #  count()
-# temos 96 casos de inconsistência entre syst e systid, sendo 95 casos sem cód. 1 em syst
-# e 1 caso (em Malta) com dois syst==1 em duas linhas diferentes.
+# RESULTADO: temos 96 casos de inconsistência entre syst e systid, sendo 95 casos
+# sem cód. 1 em syst e 1 caso (em Malta) com dois syst==1 em duas linhas diferentes.
 # Portanto, para padronizar a variável syst, será necessário corrigi-la.
 
 
-rm(chec_syst)
+#rm(chec_syst)
 
 
 
@@ -107,8 +82,8 @@ rm(chec_syst)
 
 ## Criação da base de trabalho:
 
-ccp_trab <- ccp_orig
-
+ccp_trab <- ccp_b_ordenada
+rm(ccp_b_ordenada)
 
 # Para decisão se os casos de C_inforce =0 serão mantidos -> não há resultados nas variáveis dependentes para os casos de C_inforce =0. Portanto, serão retirados
 # frequência cruzada com c_inforce e HOUSENUM
@@ -147,11 +122,17 @@ prim <- ccp_trab[!is.na(systid), .SD[1], by = systid] |>
 
 
 ccp_trab <- ccp_trab |>
-  left_join(select(incons_syst, systid, var_chec_syst),
-            by = "systid") |>
-  left_join(prim, by = "uniqueid")
+#  left_join(select(incons_syst, systid, var_chec_syst),
+#            by = "systid") |>
+  left_join(prim, by = "uniqueid") |>
+  mutate(syst_co = case_when(
+    is.na(syst_co) ~ 0,
+    TRUE ~ syst_co
+    ))
 
-# ccriando base para checagem da syst_co - CHECAGEM OK
+#rm(incons_syst)
+
+# criando base para checagem da syst_co - CHECAGEM OK
 #chec_syst_co <- ccp_trab |>
 #  select(cowcode,
 #         country,
@@ -165,8 +146,8 @@ ccp_trab <- ccp_trab |>
 
 # checando as diferenças entre syst e syst_co são exatamente os problemas
 # que foram encontrados anteriormente
-#dplyr::setdiff(select(chec_syst_co, -syst_co), select(incons_syst, -var_chec_syst)) # diferença na Serbia 2006 - são de fato 2 sistemas em 2006
-#dplyr::setdiff(select(incons_syst, -var_chec_syst), select(chec_syst_co, -syst_co)) # diferença é Malta- ok
+#dplyr::setdiff(select(chec_syst_co, -syst_co), select(incons_syst, -var_chec_syst)) # sem diferenças
+#dplyr::setdiff(select(incons_syst, -var_chec_syst), select(chec_syst_co, -syst_co)) # diferença é Malta- ok, já corrigida
 
 
 ## identificação do primeiro sistema constitucional de cada país (variável primeiroSyst)
@@ -181,7 +162,7 @@ aux <- ccp_trab |>
 # mesmo quando há imputação em coding_imputed=1. Para identificar path dependence,
 # a imputação de informações a partir de constituições próximas afeta diretamente
 # o resultado, por isso imputações foram desconsideradas.
-base_primeiroSyst <- aux[c_inforce == 1 & coding_available==1, .SD[1], by= c("country")] |>
+base_primeiroSyst <- aux[c_inforce == 1 & coding_available==1, .SD[1], by= c("cowcode")] |>
   select(uniqueid, primeiroSyst)
 
 ccp_trab <- ccp_trab |>
@@ -306,7 +287,15 @@ ccp_trab |>
 # bicameralismo, emend_dificil e controle_const na constituição codificada anterior
 
 base_aux_independentes <- ccp_trab |>
-  select(country, year, systid)
+  select(cowcode,
+         country,
+         year,
+         systid,
+         bicameralismo,
+         emend_dificil,
+         controle_const,
+         ultimo_ano_syst,
+         validos)
 
 
 ### VOLTAR AQUI PARA CORRIGIR CÓDIGO ABAIXO
