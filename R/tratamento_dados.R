@@ -212,6 +212,7 @@ view(ccp_trab |>
               syst,
               syst_co,
               systid,
+              evnttype,
               c_inforce,
               coding_available,
               uniqueid,
@@ -391,30 +392,30 @@ ccp_trab_val <- ccp_trab |>
 ccp_trab_val <- ccp_trab_val |>
   mutate(
     replace_ex_lp = ifelse(((hospdiss_2 == 1 |
-                            hospdiss_3 == 1 |
-                            hospdiss_4 == 1 |
-                            hospdiss_98 == 1) & (
-                              hosadiss_2 == 1 |
-                                hosadiss_3 == 1 |
-                                hosadiss_4 == 1 |
-                                hosadiss_10 == 1 |
-                                hosadiss_98 == 1
-                            ) & (
-                              hospdiss_1 != 1 &
-                                hospdiss_5 != 1 &
-                                hospdiss_6 != 1 &
-                                hospdiss_7 != 1 &
-                                hospdiss_8 != 1 &
-                                hospdiss_9 != 1 &
-                                hospdiss_96 != 1 &
-                                hosadiss_1 != 1 &
-                                hosadiss_5 != 1 &
-                                hosadiss_6 != 1 &
-                                hosadiss_7 != 1 &
-                                hosadiss_8 != 1 &
-                                hosadiss_9 != 1 &
-                                hosadiss_96 != 1
-                            )
+                               hospdiss_3 == 1 |
+                               hospdiss_4 == 1 |
+                               hospdiss_98 == 1) & (
+                                 hosadiss_2 == 1 |
+                                   hosadiss_3 == 1 |
+                                   hosadiss_4 == 1 |
+                                   hosadiss_10 == 1 |
+                                   hosadiss_98 == 1
+                               ) & (
+                                 hospdiss_1 != 1 &
+                                   hospdiss_5 != 1 &
+                                   hospdiss_6 != 1 &
+                                   hospdiss_7 != 1 &
+                                   hospdiss_8 != 1 &
+                                   hospdiss_9 != 1 &
+                                   hospdiss_96 != 1 &
+                                   hosadiss_1 != 1 &
+                                   hosadiss_5 != 1 &
+                                   hosadiss_6 != 1 &
+                                   hosadiss_7 != 1 &
+                                   hosadiss_8 != 1 &
+                                   hosadiss_9 != 1 &
+                                   hosadiss_96 != 1
+                               )
     ) | (((hogpdiss_3 == 1 |
              hogpdiss_4 == 1 |
              hogpdiss_5 == 1 |
@@ -440,55 +441,151 @@ ccp_trab_val <- ccp_trab_val |>
     1,
     0),
     serve_min_lp = case_when(cabrestl == 1 | cabrestl == 3 ~ 1,
-                          TRUE ~ 0),
+                             TRUE ~ 0),
     interprellate_lp = case_when(intexec >= 1 & intexec <= 3 ~ 1,
-                              TRUE ~ 0),
+                                 TRUE ~ 0),
     investigate_lp = case_when(invexe == 1 ~ 1,
-                            TRUE ~ 0),
+                               TRUE ~ 0),
     # "oversee_pol" de fora, porque "comap" não está na base
     # "deiappoint_pm" de fora, porque "HOGNOM" e "HOGAPP" não estão na base
     appoint_min_lp = case_when(((cabappt_3 == 1 |
-                                cabappt_4 == 1 |
-                                cabappt_5 == 1) & (cabappr_7 == 1 |
-                                                     cabappr_98 == 1)
+                                   cabappt_4 == 1 |
+                                   cabappt_5 == 1) & (cabappr_7 == 1 |
+                                                        cabappr_98 == 1)
     ) | (cabappr_3 == 1 |
            cabappr_4 == 1 |
            cabappr_5 == 1) ~ 1,
     TRUE ~ 0),
     #"lack_pres" de fora, porque HOSELCTR não está na base
-    no_diss_lp = case_when(legdiss==5 | legdiss==98 ~1,
-                        TRUE ~ 0),
+    no_diss_lp = case_when(legdiss == 5 | legdiss == 98 ~ 1,
+                           TRUE ~ 0),
     #"no_decree" de fora, porque "HOSDECA" e "HOGDECA" não estão na base
     #"no_veto" de fora, porque "legapp" não tem categorias referidas no coding_rules
-    no_review_lp = case_when(interp_5==1 | interp_6==1 | interp_7==1 ~ 1,
-                          TRUE ~ 0),
+    no_review_lp = case_when(interp_5 == 1 |
+                               interp_6 == 1 | interp_7 == 1 ~ 1,
+                             TRUE ~ 0),
     #"no_gate" de fora, porque "INI_IN" não está na base
     immunity_lp = case_when(immunity == 1 ~ 1,
                             TRUE ~ 0),
-    elected_lp = case_when(lhselect_1==0 & (uhselect_1==0 | uhselect_1==99) ~ 1,
+    elected_lp = case_when(lhselect_1 == 0 &
+                             (uhselect_1 == 0 | uhselect_1 == 99) ~ 1,
                            TRUE ~ 0),
-  )
-
-
-view(ccp_trab_val |>
-  select(cowcode, year,legisl,housenum,lhselect_1,uhselect_1) |>
-  filter(lhselect_1!=1 | uhselect_1!=0))
-
-
-
+    amend_lp = case_when((amndprop_4 == 1 |
+                            amndprop_5 == 1 | amndprop_6 == 1) &
+                           (amndappr_4 == 1 |
+                              amndappr_5 == 1 | amndappr_6 == 1) &
+                           (
+                             amndappr_98 == 1 & amndprop_1 == 0 & amndprop_2 == 0 &
+                               amndprop_3 == 0 &
+                               amndprop_7 == 0 & amndprop_8 == 0 &
+                               amndprop_9 == 0 &
+                               amndprop_10 == 0 & amndprop_96 == 0 &
+                               amndprop_98 == 0
+                           ) &
+                           (
+                             amndappr_1 != 1 & amndappr_2 != 1 & amndappr_3 != 1 &
+                               amndappr_7 != 1 &
+                               amndappr_8 != 1 & amndappr_96 != 1
+                           ) ~ 1,
+                         TRUE ~ 0
+    ),
+    war_lp = case_when((war_4 == 1 |
+                          war_5 == 1 | war_6 == 1 | war_7 == 1) |
+                         (warap == 4 | warap == 5 | warap == 6) ~ 1,
+                       TRUE ~ 0
+    ),
+    #"treaty_lp" não foi feita, pois TREATYAP não está disponível no banco
+    judiciary_lp = case_when(((supnom_4 == 1 |
+                                 supnom_5 == 1) & supap_98 == 1) |
+                               (supap_4 == 1 | supap_5 == 1) &
+                               (ordnom_4 == 1 |
+                                  ordnom_5 == 1) & supap_98 == 1 |
+                               (supap_4 == 1 | supap_5 == 1) &
+                               (supnom_4 != 99 &
+                                  supap_4 != 99 & ordnom_4 != 99 & ordap_4 != 99) ~ 1,
+                             TRUE ~ 0
+    ),
+    # bank_lp de fora, pois BANKNOM e BANKAP não estão disponíveis no banco
+    no_limit_lp = case_when(lhtrmlim == 5 &
+                              (uhtrmlim == 5 | uhtrmlim == 98) ~ 1,
+                            TRUE ~ 0)
+  ) |>
+  rowwise() |>
+  # criação da variável do índice Legislative Power:
+  mutate(legislative_power_index = sum(c_across(replace_ex_lp:no_limit_lp))/13) |>
+  ungroup()
 
 
 ## Variável de poder do executivo
 
-#(1) the power to initiate legislation; LEG_IN_1==1 ou LEG_IN_2==1 ou LEG_IN_3==1
-#(2) the power to issue decrees; HOSDEC==1 ou HOGDEC==1
-#(3) the power to initiate constitutional amendments; AMNDPROP_1==1 ou AMNDPROP_2==1
+#(1) the power to initiate legislation; LEG_IN_1==1
+#(2) the power to issue decrees; HOSDEC==1
+#(3) the power to initiate constitutional amendments; AMNDPROP_1==1
 #(4) the power to declare states of emergency; EMDECL==1
 #(5) veto power; LEGAPP==1
 #(6) the power to challenge the constitutionality of legislation; CHALLEG_1==1
 #(7) the power to dissolve the legislature.LEGDISS==1
 
-## variável de existência de federalismo
+ccp_trab_val <- ccp_trab_val |>
+  mutate(leg_in_ep = case_when(leg_in_1==1 ~ 1,
+                               TRUE ~ 0),
+         hosdec_ep = case_when(hosdec==1 ~ 1,
+                               TRUE ~ 0),
+         amnprop_ep = case_when(amndprop_1==1 ~ 1,
+                                TRUE ~ 0),
+         emdecl_ep = case_when(emdecl==1 ~ 1,
+                               TRUE ~ 0),
+         legapp_ep = case_when(legapp==1 ~ 1,
+                               TRUE ~ 0),
+         challeg_ep = case_when(challeg_1==1 ~ 1,
+                                TRUE ~ 0),
+         legdiss_ep = case_when(legdiss==1 ~ 1,
+                                TRUE ~ 0)) |>
+  rowwise() |>
+  mutate(executive_power_index = sum(c_across(leg_in_ep:legdiss_ep))) |>
+  ungroup()
+
+
+
+## variável de existência de federalismo -> existência de governos subnacionais
+# na constituição
+
+# São contados como 1 todos os casos em que as constituições não mencionam estado
+# unitário na fedunit, e reconhece governos subnacionais
+
+ccp_trab_val <- ccp_trab_val |>
+  mutate(federalismo = case_when(fedunit!=3 &
+                                   (federal_1==1 | federal_2==1 | federal_3==1) ~ 1,
+                                 TRUE ~ 0))
+
+## Variável de menção a crimes do regime anterior
+# código 1 -> se a constituição menciona crimes, independentemente de prever punição
+# OU se há comissão da verdade instaurada
+# código 0 -> demais casos
+
+ccp_trab_val <- ccp_trab_val |>
+  mutate(crimes_ant = case_when(prevlead==1 |
+                                  prevlead == 2 |
+                                  truthcom==1 ~ 1,
+                                TRUE ~ 0))
+
+
+## Variáveis de Era, conforme referência da The Endurance of National Constitutions
+
+# anteriores a 1914
+# de 1914 a 1945
+# A partir de 1946
+
+ccp_trab_val <- ccp_trab_val |>
+  mutate(ate_1913 = case_when(year <= 1913 ~ 1,
+                              TRUE ~ 0),
+         de_1914_a_1945 = case_when(year >=1914 & year <=1945 ~ 1,
+                                    TRUE ~ 0),
+         a_partir_1946 = case_when(year >=1946 ~ 1,
+                                   TRUE ~ 0))
+
+
+
 
 
 
