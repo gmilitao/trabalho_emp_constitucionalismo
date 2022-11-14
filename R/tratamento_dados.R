@@ -20,23 +20,26 @@ setDT(ccp_orig)
 
 # Para o cowcode 340, há três nomes de país diferentes, conforme informação abaixo.
 # Nos demais casos, cada cowcode tem apenas um nome correspondente.
-# Para a ordenação, será considerada a variável cowcode e year
-ccp_orig |>
-  select(cowcode, country) |>
-  group_by(cowcode, country) |>
-  count() |>
-  ungroup() |>
-  group_by(cowcode) |>
-  mutate(n_cowcode = n()) |>
-  filter(n_cowcode>1)
+# Portanto, para a ordenação, serão consideradas a variáveis cowcode e year
+
+#ccp_orig |>
+#  select(cowcode, country) |>
+#  group_by(cowcode, country) |>
+#  count() |>
+#  ungroup() |>
+#  group_by(cowcode) |>
+#  mutate(n_cowcode = n()) |>
+#  filter(n_cowcode>1)
 
 ## Checagem de cowcode e year
 # Há apenas um caso de cowcode com duplicidade de ano: cowcode 340, ano 2006
-ccp_orig |>
-  select(cowcode, year) |>
-  group_by(cowcode, year) |>
-  count() |>
-  filter(n>1)
+
+#ccp_orig |>
+#  select(cowcode, year) |>
+#  group_by(cowcode, year) |>
+#  count() |>
+#  filter(n>1)
+
 # As duas constituições do cowcode 340 (Serbia) em 2006 são constituições diferentes.
 # Portanto, ambas serão mantidas na base de análise.
 
@@ -281,7 +284,7 @@ ccp_trab |>
 
 ccp_trab |>
   filter(validos==1) |>
-  group_by(controle_const) |>
+  group_by(jud_review) |>
   count()
 
 ### CRIAÇÃO DAS VARIÁVEIS INDEPENDENTES ----
@@ -328,15 +331,15 @@ view(base_aux_independentes|>
 
 # bicameralismo X bicameralismo_ant
 
-table(base_aux_independentes$bicameralismo_ant, base_aux_independentes$bicameralismo)
+#table(base_aux_independentes$bicameralismo_ant, base_aux_independentes$bicameralismo)
 
 # emend_dificil X emend_dificil_ant
 
-table(base_aux_independentes$emend_dificil_ant, base_aux_independentes$emend_dificil)
+#table(base_aux_independentes$emend_dificil_ant, base_aux_independentes$emend_dificil)
 
 # jud_review x jud_review_ant
 
-table(base_aux_independentes$jud_review_ant, base_aux_independentes$jud_review)
+#table(base_aux_independentes$jud_review_ant, base_aux_independentes$jud_review)
 
 # Ver o resultado da criação das variáveis
 
@@ -386,63 +389,91 @@ ccp_trab_val <- ccp_trab |>
 # disponíveis em "https://comparativeconstitutionsproject.org/download-data/".
 
 ccp_trab_val <- ccp_trab_val |>
-  mutate(replace_ex = ifelse(((hospdiss_2 == 1 |
-                                 hospdiss_3 == 1 |
-                                 hospdiss_4 == 1 |
-                                 hospdiss_98 == 1) & (
-                                   hosadiss_2 == 1 |
-                                     hosadiss_3 == 1 |
-                                     hosadiss_4 == 1 |
-                                     hosadiss_10 == 1 |
-                                     hosadiss_98 == 1
-                                 ) & (
-                                   hospdiss_1 != 1 &
-                                     hospdiss_5 != 1 &
-                                     hospdiss_6 != 1 &
-                                     hospdiss_7 != 1 &
-                                     hospdiss_8 != 1 &
-                                     hospdiss_9 != 1 &
-                                     hospdiss_96 != 1 &
-                                     hosadiss_1 != 1 &
-                                     hosadiss_5 != 1 &
-                                     hosadiss_6 != 1 &
-                                     hosadiss_7 != 1 &
-                                     hosadiss_8 != 1 &
-                                     hosadiss_9 != 1 &
-                                     hosadiss_96 != 1
-                                 )
-  ) | (((hogpdiss_3 == 1 |
-           hogpdiss_4 == 1 |
-           hogpdiss_5 == 1 |
-           hogpdiss_98 == 1) & (hogadiss_2 == 1 |
-                                  hogadiss_3 == 1 |
-                                  hogadiss_4 == 1 |
-                                  hogadiss_98 == 1) & (
-                                    hogpdiss_1 != 1 &
-                                      hogpdiss_2 != 1 &
-                                      hogpdiss_6 != 1 &
-                                      hogpdiss_7 != 1 &
-                                      hogpdiss_8 != 1 &
-                                      hogpdiss_9 != 1 &
-                                      hogpdiss_96 != 1 &
-                                      hogadiss_1 != 1 &
-                                      hogadiss_5 != 1 &
-                                      hogadiss_6 != 1 &
-                                      hogadiss_7 != 1 &
-                                      hogadiss_8 != 1 &
-                                      hogadiss_96 != 1
-                                  )
-  )),
-  1,
-  0),
-  serve_min = case_when(cabrestl == 1 | cabrestl ==3 ~ 1,
-                        TRUE ~ 0),
-  interprellate = case_when(intexec >=1 & intexec <=3 ~ 1,
-                            TRUE ~ 0),
-  investigate = case_when(invexe == 1 ~ 1,
+  mutate(
+    replace_ex_lp = ifelse(((hospdiss_2 == 1 |
+                            hospdiss_3 == 1 |
+                            hospdiss_4 == 1 |
+                            hospdiss_98 == 1) & (
+                              hosadiss_2 == 1 |
+                                hosadiss_3 == 1 |
+                                hosadiss_4 == 1 |
+                                hosadiss_10 == 1 |
+                                hosadiss_98 == 1
+                            ) & (
+                              hospdiss_1 != 1 &
+                                hospdiss_5 != 1 &
+                                hospdiss_6 != 1 &
+                                hospdiss_7 != 1 &
+                                hospdiss_8 != 1 &
+                                hospdiss_9 != 1 &
+                                hospdiss_96 != 1 &
+                                hosadiss_1 != 1 &
+                                hosadiss_5 != 1 &
+                                hosadiss_6 != 1 &
+                                hosadiss_7 != 1 &
+                                hosadiss_8 != 1 &
+                                hosadiss_9 != 1 &
+                                hosadiss_96 != 1
+                            )
+    ) | (((hogpdiss_3 == 1 |
+             hogpdiss_4 == 1 |
+             hogpdiss_5 == 1 |
+             hogpdiss_98 == 1) & (hogadiss_2 == 1 |
+                                    hogadiss_3 == 1 |
+                                    hogadiss_4 == 1 |
+                                    hogadiss_98 == 1) & (
+                                      hogpdiss_1 != 1 &
+                                        hogpdiss_2 != 1 &
+                                        hogpdiss_6 != 1 &
+                                        hogpdiss_7 != 1 &
+                                        hogpdiss_8 != 1 &
+                                        hogpdiss_9 != 1 &
+                                        hogpdiss_96 != 1 &
+                                        hogadiss_1 != 1 &
+                                        hogadiss_5 != 1 &
+                                        hogadiss_6 != 1 &
+                                        hogadiss_7 != 1 &
+                                        hogadiss_8 != 1 &
+                                        hogadiss_96 != 1
+                                    )
+    )),
+    1,
+    0),
+    serve_min_lp = case_when(cabrestl == 1 | cabrestl == 3 ~ 1,
                           TRUE ~ 0),
-  # tive que deixar "oversee_pol" de fora, porque não encontrei "comap" na base
+    interprellate_lp = case_when(intexec >= 1 & intexec <= 3 ~ 1,
+                              TRUE ~ 0),
+    investigate_lp = case_when(invexe == 1 ~ 1,
+                            TRUE ~ 0),
+    # "oversee_pol" de fora, porque "comap" não está na base
+    # "deiappoint_pm" de fora, porque "HOGNOM" e "HOGAPP" não estão na base
+    appoint_min_lp = case_when(((cabappt_3 == 1 |
+                                cabappt_4 == 1 |
+                                cabappt_5 == 1) & (cabappr_7 == 1 |
+                                                     cabappr_98 == 1)
+    ) | (cabappr_3 == 1 |
+           cabappr_4 == 1 |
+           cabappr_5 == 1) ~ 1,
+    TRUE ~ 0),
+    #"lack_pres" de fora, porque HOSELCTR não está na base
+    no_diss_lp = case_when(legdiss==5 | legdiss==98 ~1,
+                        TRUE ~ 0),
+    #"no_decree" de fora, porque "HOSDECA" e "HOGDECA" não estão na base
+    #"no_veto" de fora, porque "legapp" não tem categorias referidas no coding_rules
+    no_review_lp = case_when(interp_5==1 | interp_6==1 | interp_7==1 ~ 1,
+                          TRUE ~ 0),
+    #"no_gate" de fora, porque "INI_IN" não está na base
+    immunity_lp = case_when(immunity == 1 ~ 1,
+                            TRUE ~ 0),
+    elected_lp = case_when(lhselect_1==0 & (uhselect_1==0 | uhselect_1==99) ~ 1,
+                           TRUE ~ 0),
   )
+
+
+view(ccp_trab_val |>
+  select(cowcode, year,legisl,housenum,lhselect_1,uhselect_1) |>
+  filter(lhselect_1!=1 | uhselect_1!=0))
+
 
 
 
@@ -456,4 +487,8 @@ ccp_trab_val <- ccp_trab_val |>
 #(5) veto power; LEGAPP==1
 #(6) the power to challenge the constitutionality of legislation; CHALLEG_1==1
 #(7) the power to dissolve the legislature.LEGDISS==1
+
+## variável de existência de federalismo
+
+
 
