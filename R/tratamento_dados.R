@@ -62,6 +62,7 @@ ccp_b_ordenada <- ccp_orig |>
 #                          syst,
 #                          systid,
 #                          c_inforce,
+#                          evnttype,
 #                          coding_available)]
 
 
@@ -192,12 +193,13 @@ ccp_trab <- ccp_trab |>
   ))
 
 # criação da identificação dos casos que serão trabalhados (variável validos)
-# Serão trabalhados apenas os países-ano em que há novo sistema constitucional, e que, ao mesmo tempo,
-# havia sistema constitucional anterior descrito E CODIFICADO no banco
+# Serão trabalhados apenas os países-ano em que há novo sistema constitucional,
+# e que, ao mesmo tempo, havia sistema constitucional anterior descrito E CODIFICADO
+# no banco.
 
 ccp_trab <- ccp_trab |>
   mutate(validos = case_when(
-    syst_co==1 & primeiroSyst == 0 & coding_available==1 ~ 1,
+    syst_co==1 & primeiroSyst == 0 & coding_available==1 & evnttype!=4 & evnttype!=7  ~ 1,
     TRUE ~ 0
   ))
 
