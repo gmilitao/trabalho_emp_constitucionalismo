@@ -1,8 +1,29 @@
 ---
-title: "texto_trabalho"
+title: "Trabalho empírico"
 format: docx
+reference-doc: "template.docx"
 editor: visual
 ---
+
+```{r setup, include=FALSE}
+
+rm(list=ls())
+
+library(flextable)
+library(tidyverse)
+library(readxl)
+library(olsrr)
+library(lmtest)
+library(corrplot)
+library(gridExtra)
+library(stargazer)
+
+sistemas_total <- read.csv("../dados/sistemas_constitucionais_ccp_v4.csv")
+
+ccp_tratada <- read.csv("../dados/ccp_tratada_valida.csv")
+
+```
+
 
 ## Quarto
 

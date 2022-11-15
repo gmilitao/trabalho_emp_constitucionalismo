@@ -163,7 +163,7 @@ aux <- ccp_trab |>
 
 
 
-# Para a criação de "primeiroSyst", são retiradas os casos de país-ano sem constituição
+# Para a criação de "primeiroSyst", são retirados os casos de país-ano sem constituição
 # vigente (c_inforce!=1) e CASOS COM coding_available=0 (em que a codificação não foi feita)
 # mesmo quando há imputação em coding_imputed=1. Para identificar path dependence,
 # a imputação de informações a partir de constituições próximas afeta diretamente
@@ -196,6 +196,8 @@ ccp_trab <- ccp_trab |>
 # Serão trabalhados apenas os países-ano em que há novo sistema constitucional,
 # e que, ao mesmo tempo, havia sistema constitucional anterior descrito E CODIFICADO
 # no banco.
+# não serão considerados válidos os casos com evento do tipo 4 (sem evento constitucional)
+# ou do tipo 7 (constituição suspensa)
 
 ccp_trab <- ccp_trab |>
   mutate(validos = case_when(
@@ -586,8 +588,37 @@ ccp_trab_val <- ccp_trab_val |>
          a_partir_1946 = case_when(year >=1946 ~ 1,
                                    TRUE ~ 0))
 
+### CRIAÇÃO DA BASE DE SISTEMAS CONSTITUCIONAIS ----
+
+# Identificação dos sistemas constitucionais na base (1049, no total)
+sistemas_inicial <- ccp_trab |>
+  filter(syst_co==1) |>
+  select(cowcode,
+         country,
+         year,
+         systid,
+         syst,
+         syst_co,
+         systyear,
+         evnttype,
+         primeiroSyst,
+         validos)
+
+# Retirada dos sistemas constitucionais referentes a constituições suspensas:
 
 
+constituicoes_suspensas <- ccp_trab |>
+  select(country, year, systid, systyear, evnttype) |>
+  group_by(country, systid, evnttype) |>
+  count() |>
+  ungroup() |>
+  filter(evnttype == 7)
+
+sistemas_total <- anti_join(sistemas_inicial, constituicoes_suspensas, by = "systid")
 
 
+### SALVAR BASES PARA TESTES ----
 
+write.csv(ccp_trab_val, file = "./dados/ccp_tratada_valida.csv")
+
+write.csv(sistemas_total, file = "./dados/sistemas_constitucionais_ccp_v4.csv")
