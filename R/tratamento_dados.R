@@ -209,21 +209,21 @@ ccp_trab <- ccp_trab |>
 
 # Ver o resultado da criação da primeiroSyst e validos
 
-view(ccp_trab |>
-       select(cowcode,
-              country,
-              year,
-              syst,
-              syst_co,
-              systid,
-              evnttype,
-              c_inforce,
-              coding_available,
-              uniqueid,
-              primeiroSyst,
-              ultimo_ano_syst,
-              validos
-              ))
+#view(ccp_trab |>
+#       select(cowcode,
+#              country,
+#              year,
+#              syst,
+#              syst_co,
+#              systid,
+#              evnttype,
+#              c_inforce,
+#              coding_available,
+#              uniqueid,
+#              primeiroSyst,
+#              ultimo_ano_syst,
+#              validos
+#              ))
 
 ##OBS: na variável "validos" estão marcadas todas as constituições que têm ao menos uma constituição
 # anterior codificada no banco. A constituição anterior não necessariamente será a imediatamente
@@ -260,9 +260,11 @@ ccp_trab <- ccp_trab |>
 
 ccp_trab <- ccp_trab |>
   mutate(emend_dificil = case_when(
-    amndapct == 3 | amndapct == 4 | amndapct == 5 ~ 1,
+    (amndapct == 3 | amndapct == 4 | amndapct == 5) |
+      ((amndapct == 1 | amndapct == 2) & (amndappr_7 == 1 | amndappr_8==1)) ~ 1,
     TRUE ~ 0
   ))
+
 
 # Judicial Review (variável jud_review)
 
@@ -276,21 +278,21 @@ ccp_trab <- ccp_trab |>
 
 ### Frequências das variáveis dependentes ----
 
-ccp_trab |>
-  filter(validos==1) |>
-  group_by(bicameralismo) |>
-  count()
+#ccp_trab |>
+#  filter(validos==1) |>
+#  group_by(bicameralismo) |>
+#  count()
 
 
-ccp_trab |>
-  filter(validos==1) |>
-  group_by(emend_dificil) |>
-  count()
+#ccp_trab |>
+#  filter(validos==1) |>
+#  group_by(emend_dificil) |>
+#  count()
 
-ccp_trab |>
-  filter(validos==1) |>
-  group_by(jud_review) |>
-  count()
+#ccp_trab |>
+#  filter(validos==1) |>
+#  group_by(jud_review) |>
+#  count()
 
 ### CRIAÇÃO DAS VARIÁVEIS INDEPENDENTES ----
 
@@ -316,20 +318,20 @@ base_aux_independentes <- base_aux_independentes |>
 
 
 
-view(base_aux_independentes|>
-       select(country,
-              year,
-              syst,
-              syst_co,
-              systid,
-              systyear,
-              c_inforce,
-              coding_available,
-              ultimo_ano_syst,
-              validos,
-              bicameralismo,
-              bicameralismo_ant
-       ))
+#view(base_aux_independentes|>
+#       select(country,
+#              year,
+#              syst,
+#              syst_co,
+#              systid,
+#              systyear,
+#              c_inforce,
+#              coding_available,
+#              ultimo_ano_syst,
+#              validos,
+#              bicameralismo,
+#              bicameralismo_ant
+#       ))
 
 
 ## cruzamentos iniciais das dependentes com as independentes principais

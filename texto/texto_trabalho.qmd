@@ -7,7 +7,6 @@ editor: visual
 
 ```{r setup, include=FALSE}
 
-rm(list=ls())
 
 library(flextable)
 library(tidyverse)
@@ -24,24 +23,42 @@ ccp_tratada <- read.csv("../dados/ccp_tratada_valida.csv")
 
 ```
 
+## Introdução
 
-## Quarto
+O presente trabalho visa identificar se entre as constituições listadas na base de características das constituições nacionais (CCN) do Comparative Constitutions Project () há resultados que indicam mecanismos de path dependence de uma constituição imediatamente anterior para a imediatamente posterior, como forma de contribuir para a discussão do motivo da elite política delegar poder a outrem no momento de elaboração constitucional. Para isso, o trabalho pretende identificar se determinadas características de constituições anteriores estão mais associadas à manutenção ou à mudança dessas mesmas características em constituições imediatamente posteriores. Três características institucionais serão observadas: o bicameralismo, a rigidez da constituição (emendamento fácil vs. Difícil) e a presença de *judicial review* na constituição. A sugestão dessas três variáveis se justifica por três motivos: 1) os três modelos institucionais envolvem graus de delegação de poderes dos constitution makers para outros atores ou esferas de poder; 2) há uma referência importante para a operacionalização das variáveis: as três características são elementos da dimensão 'federal-unitária' dos modelos de democracia de Arend Lijphart; e 3) as três características institucionais são observáveis na base de dados utilizada.
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+## Informações metodológicas
 
-## Running Code
+O universo que a amostra da base CCN pretende representar é o de constituições de todos os estados independentes entre os anos de 1789 e 2021. A partir das informações presentes no livro de códigos da CCN, é possível identificar que a base tem como unidade o que os autores chamam de "país-ano", isto é, cada linha do banco de dados original corresponde a um ano para cada país independente no período analisado. No total, são 21.341 países-ano.
+Um conceito base para análise desta base de dados é o de sistema constitucional, que, de acordo com os autores, corresponde a um período em que uma constituição está em vigência, antes que seja substituída por outra ou seja suspensa.  
+Pelo objetivo do presente trabalho envolver a comparação entre constituições em momentos de substituição, para identificar se certas características do sistema anterior têm efeito na continuidade das mesmas características no sistema subsequente, fez-se necessário um tratamento da base origial para exclusão dos países-ano que não correspondiam a momentos de mudança de sistemas constitucionais. Portanto, foram desconsiderados da base:
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+* Todas as unidades de país-ano que não correspondiam ao ano de início de vigência dos sistemas constitucionais;
 
-```{r}
-1 + 1
-```
+* Todos os países-ano correspondentes ao primeiro sistema constitucional presente na base de dados para cada país, uma vez que, não havendo sistema constitucional anterior descrito, a existência ou não dos fenômenos observados evidentemente teria que ser atribuído exclusivamente a outros fatores, que não uma constituição anterior.
 
-You can add options to executable code like this
+Considerando os dados do Brasil, por exemplo, a base original contém uma linha para cada ano entre 1822 e 2021, sendo que o primeiro ano com sistema constitucional vigente é o de 1824. Após o tratamento da base, foram retirados todos os anos correspondentes ao sistema constitucional de 1824 (já que não havia sistema constitucional anterior), e todos os demais anos que não correspondem a novas constituições em vigência. No sistema constitucional de 1967, por exemplo, foram excluídos todos os anos de 1968 a 1987.
+Outros detalhes mencionados no livro de códigos da base de dados também foram considerados no tratamento inicial. Há unidades país-ano na base que correspondem a eventos constitucionais não codificados pelos autores, isto é, não apresentam respostas válidas em nenhuma das questões. Todas essas unidades tiveram que ser desconsideradas, mas se um sistema constitucional apresentava ao menos uma linha codificada, ele foi considerado. 
+A base original também inclui países-ano sem constituições em vigência. Por esse motivo, foi necessária a retirada dessas unidades para as análises.
+vale ressaltar, ainda, que, de acordo com o livro de códigos da base de dados, parte das questões presentes no instrumento de coleta do estudo não tiveram variáveis incluídas na na base de dados, o que ocorreu, segundo os autores, tanto por falta de variação, quanto por preocupações relacionadas à qualidade dos dados gerados. Conforme será exposto adiante, isso trará algumas limitações quanto à replicação de alguns indicadores, e, por consequência, para a utilização de controles adequados no estudo.
+A base utilizada nas análises, portanto, corresponde a sistemas constitucionais que estavam em vigência, que apresentam ao menos um ano codificado na CCN, e que possuíam sistema constitucional anterior que esteve em vigência e que foi codificado na CCN. No total, foram contados 963 sistemas constitucionais que estiveram ao menos um ano em vigência na base da versão 4 da CCN. Considerando todos os critérios descritos, 407 deles puderam ser utilizados na base, o que corresponde a um aproveitamento de `r paste0(round((407/963)*100, 1),"%")`. As quantidades de sistemas constitucionais considerados na análise, por país, estão descritas na tabela 1 do apêndice. A base de dados tratada está disponível para o download **NESTE LINK - ATUALIZAR DEPOIS**. O tratamento dos dados foi feito com a utilização do software R (**INCLUIR CITAÇÃO DO R**), e o script está disponível para consulta em **INCLUIR LINK DO GITHUB**. 
 
-```{r}
-#| echo: false
-2 * 2
-```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+MENCIONAR LIMITAÇÕES
+
+
+
+Além disso 
+
+### Variáveis dependentes
+
+### Variáveis independentes
+
+## Análise dos resultados
+
+## Implicações da análise empírica
+
+## Apêndice
+
+
+
