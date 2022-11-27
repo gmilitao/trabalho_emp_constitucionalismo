@@ -257,6 +257,8 @@ ccp_trab <- ccp_trab |>
 
 # Rigidez da constituição (variável emend_dificil)
 #  Considerando maioria de dois terços ou mais difícil (incluindo const. não emendáveis)
+# inclui como 1 os casos de "maioria entre dois terços e ordinária" do Lijphart,
+# que tenham também ratificação popular ou de assembleias subsidiárias.
 
 ccp_trab <- ccp_trab |>
   mutate(emend_dificil = case_when(

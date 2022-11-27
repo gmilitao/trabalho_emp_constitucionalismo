@@ -1,14 +1,41 @@
 ---
-title: "Análises iniciais"
+title: "Análises"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+```{r setup, include=FALSE}
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
-```{r}
-plot(cars)
+library(flextable)
+library(tidyverse)
+library(readxl)
+library(olsrr)
+library(lmtest)
+library(corrplot)
+library(gridExtra)
+library(stargazer)
+
+sistemas_total <- read.csv("../dados/sistemas_constitucionais_ccp_v4.csv")
+
+ccp_tratada <- read.csv("../dados/ccp_tratada_valida.csv")
+
+```
+
+## Variáveis dependentes
+
+### Bicameralismo:
+
+Frequência simples:
+
+
+```{r echo=FALSE}
+
+ccp_tratada |> 
+  count(bicameralismo) |> 
+  mutate(Percentual = round(n/sum(n)*100,1))
+
+
+
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
