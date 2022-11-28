@@ -255,16 +255,16 @@ ccp_trab <- ccp_trab |>
   ))
 
 
-# Rigidez da constituição (variável emend_dificil)
+# Flexibilidade da constituição (variável emend_facil)
 #  Considerando maioria de dois terços ou mais difícil (incluindo const. não emendáveis)
-# inclui como 1 os casos de "maioria entre dois terços e ordinária" do Lijphart,
+# inclui como 0 os casos de "maioria entre dois terços e ordinária" do Lijphart,
 # que tenham também ratificação popular ou de assembleias subsidiárias.
 
 ccp_trab <- ccp_trab |>
-  mutate(emend_dificil = case_when(
+  mutate(emend_facil = case_when(
     (amndapct == 3 | amndapct == 4 | amndapct == 5) |
-      ((amndapct == 1 | amndapct == 2) & (amndappr_7 == 1 | amndappr_8==1)) ~ 1,
-    TRUE ~ 0
+      ((amndapct == 1 | amndapct == 2) & (amndappr_7 == 1 | amndappr_8==1)) ~ 0,
+    TRUE ~ 1
   ))
 
 
@@ -288,7 +288,7 @@ ccp_trab <- ccp_trab |>
 
 #ccp_trab |>
 #  filter(validos==1) |>
-#  group_by(emend_dificil) |>
+#  group_by(emend_facil) |>
 #  count()
 
 #ccp_trab |>
@@ -305,7 +305,7 @@ base_aux_independentes <- ccp_trab |>
 # criação  bicameralismo_ant: se havia ou não bicameralismo na última
 # constituição codificada antes de cada constituição analisada.
 
-# emend_dificil_ant: se havia ou não bicameralismo na última
+# emend_facil_ant: se havia ou não emendamento facil na última
 # constituição codificada antes de cada constituição analisada.
 
 # jud_review_ant: se havia ou não judicial review na última
@@ -314,7 +314,7 @@ base_aux_independentes <- ccp_trab |>
 base_aux_independentes <- base_aux_independentes |>
   group_by(cowcode) |>
   mutate(bicameralismo_ant = lag(bicameralismo),
-         emend_dificil_ant = lag(emend_dificil),
+         emend_facil_ant = lag(emend_facil),
          jud_review_ant = lag(jud_review)) |>
   ungroup()
 
@@ -342,9 +342,9 @@ base_aux_independentes <- base_aux_independentes |>
 
 #table(base_aux_independentes$bicameralismo_ant, base_aux_independentes$bicameralismo)
 
-# emend_dificil X emend_dificil_ant
+# emend_facil X emend_facil_ant
 
-#table(base_aux_independentes$emend_dificil_ant, base_aux_independentes$emend_dificil)
+#table(base_aux_independentes$emend_facil_ant, base_aux_independentes$emend_facil)
 
 # jud_review x jud_review_ant
 
@@ -375,7 +375,7 @@ ccp_trab <- ccp_trab |>
       base_aux_independentes,
       uniqueid,
       bicameralismo_ant,
-      emend_dificil_ant,
+      emend_facil_ant,
       jud_review_ant
     ),
     by = "uniqueid"
