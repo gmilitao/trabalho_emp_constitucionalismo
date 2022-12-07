@@ -418,16 +418,6 @@ exp(d[1])
 
 ```
 
-### Taxa de erro - NÃO USAR
-
-Lembrete de como calcular a "Taxa de erro" (página 255 de Gelman, hill e Vehtari - NÃO USAR, O CÓDIGO ESTÁ ERRADO)
-
-```{r}
-
-#mean((modelo2_emend$linear.predictors>0.5 & modelo2_emend$y==0) | (modelo2_emend$linear.predictors<0.5 & modelo2_emend$y==1))
-
-
-```
 
 ## Implicações da análise empírica
 
@@ -457,4 +447,3 @@ resumo_desc <- as.data.frame(summarytools::descr(descritivo,
 knitr::kable(resumo_desc)
 
 ```
-
