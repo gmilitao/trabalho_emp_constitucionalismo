@@ -1,0 +1,460 @@
+---
+title: "Trabalho empírico"
+format: docx
+reference-doc: "template.docx"
+editor: visual
+---
+
+```{r setup, include=FALSE}
+
+
+library(flextable)
+library(tidyverse)
+library(readxl)
+library(olsrr)
+library(lmtest)
+library(corrplot)
+library(gridExtra)
+library(stargazer)
+library(lessR)
+
+sistemas_total <- read.csv("../dados/sistemas_constitucionais_ccp_v4.csv")
+
+ccp_tratada <- read.csv("../dados/ccp_tratada_valida.csv")
+
+```
+
+## Introdução
+
+## Informações metodológicas
+
+### Variáveis dependentes
+
+#### Bicameralismo
+
+```{r freq bicameralismo, echo=FALSE}
+
+freqBicameralismo <- ccp_tratada |> 
+  count(bicameralismo) |> 
+  mutate(Percentual = round(n/sum(n)*100,1)) |> 
+  janitor::adorn_totals()
+
+kableExtra::kable(freqBicameralismo, 
+                  col.names = c("Bicameralismo", "Freq.", "%"))
+
+```
+
+#### Emendamento facil
+
+```{r freq emendamento, echo=FALSE}
+
+freqEmendFacil <- ccp_tratada |> 
+  count(emend_facil) |> 
+  mutate(Percentual = round(n/sum(n)*100,1)) |> 
+  janitor::adorn_totals()
+
+kableExtra::kable(freqEmendFacil, 
+                  col.names = c("Emendamento facil", "Freq.", "%"))
+
+```
+
+#### Judicial Review
+
+```{r freq judicialreview, echo=FALSE}
+
+freqJudRev <- ccp_tratada |> 
+  count(jud_review) |> 
+  mutate(Percentual = round(n/sum(n)*100,1)) |> 
+  janitor::adorn_totals()
+
+kableExtra::kable(freqJudRev, 
+                  col.names = c("Judicial Review", "Freq.", "%"))
+
+```
+
+### Variáveis independentes
+
+#### Variáveis independentes principais
+
+Tabelas cruzadas de bicameralismo e bicameralismo anterior
+
+```{r cruzada bica, echo=FALSE}
+
+
+xbicameralismo <- stats::xtabs(~ bicameralismo + bicameralismo_ant, data = ccp_tratada)
+
+knitr::kable(ccp_tratada |> 
+  count(bicameralismo, bicameralismo_ant) |> 
+  mutate(bicameralismo = case_when(bicameralismo == 0 ~ "Nao possui bicameralismo",
+                                   bicameralismo == 1 ~ "Possui bicameralismo"),
+         bicameralismo_ant = case_when(bicameralismo_ant == 0 ~ "Nao possui bicameralismo",
+                                       bicameralismo_ant == 1~ "Possuia bicameralismo")) |> 
+  pivot_wider(names_from = bicameralismo_ant, values_from = n) |> 
+  mutate(Total = rowSums(across(2:3))) |> 
+  janitor::adorn_totals())
+
+
+```
+
+Sistema constitucional anterior possuía emendamento difícil
+
+```{r cruzada emend, echo=FALSE}
+
+
+xemend_facil <- stats::xtabs(~ emend_facil + emend_facil_ant, data = ccp_tratada)
+
+
+knitr::kable(ccp_tratada |> 
+  count(emend_facil, emend_facil_ant) |> 
+  mutate(emend_facil = case_when(emend_facil == 0 ~ "Nao possui emendamento facil",
+                                   emend_facil == 1 ~ "Possui emendamento facil"),
+         emend_facil_ant = case_when(emend_facil_ant == 0 ~ "Nao possuia emendamento facil",
+                                       emend_facil_ant == 1~ "Possuia emendamento facil")) |> 
+  pivot_wider(names_from = emend_facil_ant, values_from = n) |> 
+  mutate(Total = rowSums(across(2:3))) |> 
+  janitor::adorn_totals())
+
+```
+
+Sistema constitucional anterior possuía judicial review
+
+```{r cruzada judreview, echo=FALSE}
+
+
+xjud_review <- stats::xtabs(~ jud_review + jud_review_ant, data = ccp_tratada)
+
+
+knitr::kable(ccp_tratada |> 
+  count(jud_review, jud_review_ant) |> 
+  mutate(jud_review = case_when(jud_review == 0 ~ "Nao possui judicial review",
+                                   jud_review == 1 ~ "Possui judicial review"),
+         jud_review_ant = case_when(jud_review_ant == 0 ~ "Nao possui judicial review",
+                                       jud_review_ant == 1~ "Possuia judicial review")) |> 
+  pivot_wider(names_from = jud_review_ant, values_from = n) |> 
+  mutate(Total = rowSums(across(2:3))) |> 
+  janitor::adorn_totals())
+
+```
+
+Testes chi quadrado
+
+```{r chi square test, echo=FALSE}
+
+chisq.test(xbicameralismo)
+chisq.test(xemend_facil)
+chisq.test(xjud_review)
+
+
+```
+
+#### Variáveis controle
+
+## Análise dos resultados
+
+### Análises Emendamento fácil
+
+Modelos para emendamento fácil
+
+```{r modelos, echo=FALSE}
+
+# modelo 1 só com emend_facil_ant
+
+modelo1_emend <- glm(emend_facil ~ emend_facil_ant,
+                     data = ccp_tratada,
+                     family = "binomial")
+
+
+# modelo 1 é o modelo com todas as variáveis
+modelo2_emend <- glm(emend_facil ~ emend_facil_ant +
+                       executive_power_index +
+                       legislative_power_index +
+                       ate_1913 +
+                       de_1914_a_1945 +
+                       a_partir_1946 +
+                       federalismo +
+                       jud_review_ant +
+                       jud_review -1,
+                     data = ccp_tratada,
+                     family = "binomial")
+
+# modelo 3 retira federalismo e jud_review
+modelo3_emend <- glm(emend_facil ~ emend_facil_ant +
+                       executive_power_index +
+                       legislative_power_index +
+                       ate_1913 +
+                       de_1914_a_1945 +
+                       a_partir_1946 -1,
+                     data = ccp_tratada,
+                     family = "binomial")
+
+
+
+
+```
+
+Modelos estão no arquivo "modelos_emend.html"
+
+```{r visualizacao, include=FALSE}
+
+stargazer(modelo1_emend, modelo2_emend, modelo3_emend,
+          type = "html", 
+          out="modelos_emend.html",
+           no.space=TRUE)
+
+```
+
+Tabelas com as proporções de casos fitted
+
+```{r fitted emend facil m1, echo=FALSE}
+
+chec_fit_emend <- as.data.frame(cbind(modelo1_emend$y, modelo1_emend$fitted.values, modelo2_emend$fitted.values, modelo3_emend$fitted.values))
+
+chec_fit_emend <- chec_fit_emend |> 
+  mutate(m1_fitted = case_when(V2 > 0.5 ~1,
+                               TRUE ~ 0),
+         m2_fitted = case_when(V3 > 0.5 ~ 1,
+                               TRUE ~ 0),
+         m3_fitted = case_when(V4 >0.5 ~ 1,
+                               TRUE ~ 0)) |> 
+  mutate(erros_m1 = m1_fitted==V1,
+         erros_m2 = m2_fitted==V1,
+         erros_m3 = m3_fitted==V1)
+
+
+knitr::kable(chec_fit_emend |> 
+  count(erros_m1) |> 
+  mutate(perc = round(n/sum(n)*100,1)))
+
+
+```
+
+```{r fitted emend facil m2, echo=FALSE}
+knitr::kable(chec_fit_emend |> 
+  count(erros_m2) |> 
+  mutate(perc = round(n/sum(n)*100,1)))
+
+```
+
+```{r fitted emend facil m3, echo=FALSE}
+knitr::kable(chec_fit_emend |> 
+  count(erros_m3) |> 
+  mutate(perc = round(n/sum(n)*100,1)))
+
+```
+
+proporção de erro, caso chutássemos que todos os sistemas eram 1:
+
+```{r fitted emend facil chutar 1, echo=FALSE}
+knitr::kable(chec_fit_emend |>
+  mutate(chute = 1) |> 
+  mutate(erros_chute = chute==V1) |> 
+  count(erros_chute) |> 
+  mutate(perc = round(n/sum(n)*100,1)))
+
+```
+
+##### Média de diferença prevista
+
+Criando a diferença média prevista para a probabilidade de ter emendamento fácil, considerando apenas a varição do emendamento facil anterior, todos os outros controles constantes:
+
+```{r media diferenca prev m3 emnd}
+
+# lembrando que "plogis" é a logit invertida. Isto é e a probabilidade da variável dependente ser 1  -> página 251 do Gelman, Hill e  Vehtari 
+
+b <- modelo3_emend$coefficients
+
+
+delta_emend <- plogis(b[1]*1 + b[2]*ccp_tratada$executive_power_index + b[3]*ccp_tratada$legislative_power_index + b[4]*ccp_tratada$ate_1913 + b[5]*ccp_tratada$de_1914_a_1945 + b[6]*ccp_tratada$a_partir_1946) - plogis(b[1]*0 + b[2]*ccp_tratada$executive_power_index + b[3]*ccp_tratada$legislative_power_index + b[4]*ccp_tratada$ate_1913 + b[5]*ccp_tratada$de_1914_a_1945 + b[6]*ccp_tratada$a_partir_1946)
+
+round(mean(delta_emend), 2)
+
+
+```
+
+Equação:
+
+$a = logit^{-1} (1.119 * 1 -0.228 * executive\_power\_index -3.599 * legislative\_power\_index + 1.856 * ate\_1913 + 1.881 * de\_1914\_a\_1945 + 1.115 * a\_partir\_de\_1946)$
+
+$b = logit^{-1} (1.119 * 0 -0.228 * executive\_power\_index -3.599 * legislative\_power\_index + 1.856 * ate\_1913 + 1.881 * de\_1914\_a\_1945 + 1.115 * a\_partir\_de\_1946$
+
+$\delta = a - b$
+
+Cálculo da média:
+
+$\frac{1}{n}\sum_{i=1}^{n} \delta$
+
+Resultado em odds ratio do coeficiente do emend_facil_ant no modelo 3:
+
+```{r odds ratio m3 emend}
+
+exp(b[1])
+
+```
+
+### Análises Jud Review
+
+```{r modelos judreview, echo=TRUE}
+
+
+# modelo 1 do jud review - só com jud review anterior
+m1_judreview <- glm(jud_review ~ jud_review_ant, 
+                    data = ccp_tratada,
+                    family = "binomial")
+  
+# modelo 2 do jud review - todas as variáveis
+m2_judreview <- glm(jud_review ~ jud_review_ant +
+                      executive_power_index +
+                       legislative_power_index +
+                      ate_1913 + 
+                      de_1914_a_1945 +
+                       a_partir_1946 +
+                       federalismo +
+                       emend_facil_ant +
+                       emend_facil -1, 
+                    data = ccp_tratada,
+                    family = "binomial")  
+  
+# modelo 3 do jud review - retirando legislative_power_index, federalismo e emend_facil 
+
+m3_judreview <- glm(jud_review ~ jud_review_ant +
+                      executive_power_index +
+                      ate_1913 + 
+                      de_1914_a_1945 +
+                      a_partir_1946 +
+                      emend_facil_ant -1, 
+                    data = ccp_tratada,
+                    family = "binomial")
+
+```
+
+Checagem da proporção de casos que previmos corretamente nos modelos para judicial review
+
+```{r fitted jud review m1, echo=FALSE}
+
+chec_fit_jud <- as.data.frame(cbind(m1_judreview$y, m1_judreview$fitted.values, m2_judreview$fitted.values, m3_judreview$fitted.values))
+
+chec_fit_jud <- chec_fit_jud |> 
+  mutate(m1_fitted = case_when(V2 > 0.5 ~1,
+                               TRUE ~ 0),
+         m2_fitted = case_when(V3 > 0.5 ~ 1,
+                               TRUE ~ 0),
+         m3_fitted = case_when(V4 >0.5 ~ 1,
+                               TRUE ~ 0)) |> 
+  mutate(erros_m1 = m1_fitted==V1,
+         erros_m2 = m2_fitted==V1,
+         erros_m3 = m3_fitted==V1)
+
+
+knitr::kable(chec_fit_jud|> 
+  count(erros_m1) |> 
+  mutate(perc = round(n/sum(n)*100,1)))
+
+
+```
+
+```{r fitted jud review m2, echo=FALSE}
+
+knitr::kable(chec_fit_jud|> 
+  count(erros_m2) |> 
+  mutate(perc = round(n/sum(n)*100,1)))
+
+
+```
+
+```{r fitted jud review m3, echo=FALSE}
+
+knitr::kable(chec_fit_jud|> 
+  count(erros_m3) |> 
+  mutate(perc = round(n/sum(n)*100,1)))
+
+
+```
+
+```{r fitted jud review chutar 1, echo=FALSE}
+
+knitr::kable(chec_fit_jud|> 
+  mutate(chute = 1) |> 
+  mutate(erros_chute = chute==V1) |> 
+  count(erros_chute) |> 
+  mutate(perc = round(n/sum(n)*100,1)))
+
+
+```
+
+Visualização dos modelos de jud review
+
+```{r visualizacao m jud rev, include=FALSE}
+
+stargazer(m1_judreview, m2_judreview, m3_judreview,
+          type = "html", 
+          out="modelos_jud_review.html",
+           no.space=TRUE)
+
+```
+
+##### Média de diferença prevista
+
+Criando a diferença média prevista para a probabilidade de ter emendamento fácil, considerando apenas a varição do emendamento facil anterior, todos os outros controles constantes:
+
+```{r media diferenca prev m3 jud}
+
+# lembrando que "plogis" é a logit invertida. Isto é e a probabilidade da variável dependente ser 1  -> página 251 do Gelman, Hill e  Vehtari 
+
+d <- m3_judreview$coefficients
+
+
+delta_jud <- plogis(d[1]*1 + d[2]*ccp_tratada$executive_power_index + d[3]*ccp_tratada$ate_1913 + d[4]*ccp_tratada$de_1914_a_1945 + d[5]*ccp_tratada$a_partir_1946 + d[6]*ccp_tratada$emend_facil_ant) - plogis(d[1]*0 + d[2]*ccp_tratada$executive_power_index + d[3]*ccp_tratada$ate_1913 + d[4]*ccp_tratada$de_1914_a_1945 + d[5]*ccp_tratada$a_partir_1946 + d[6]*ccp_tratada$emend_facil_ant)
+
+round(mean(delta_jud), 2)
+
+
+```
+
+Resultado em odds ratio do coeficiente do jud_review_ant no modelo 3:
+
+```{r odds ratio m3 jud}
+
+exp(d[1])
+
+```
+
+### Taxa de erro - NÃO USAR
+
+Lembrete de como calcular a "Taxa de erro" (página 255 de Gelman, hill e Vehtari - NÃO USAR, O CÓDIGO ESTÁ ERRADO)
+
+```{r}
+
+#mean((modelo2_emend$linear.predictors>0.5 & modelo2_emend$y==0) | (modelo2_emend$linear.predictors<0.5 & modelo2_emend$y==1))
+
+
+```
+
+## Implicações da análise empírica
+
+## Apêndice
+
+#### Tabela com dados resumo das variáveis
+
+```{r}
+
+descritivo <- select(ccp_tratada, emend_facil,
+                     jud_review,
+                     emend_facil_ant,
+                     jud_review_ant,
+                     executive_power_index,
+                     legislative_power_index,
+                     ate_1913,
+                     de_1914_a_1945,
+                     a_partir_1946,
+                     federalismo)
+
+resumo_desc <- as.data.frame(summarytools::descr(descritivo,
+                    stats = "common")) |> 
+  t() |> 
+  as.data.frame() |> 
+  mutate_if(is.numeric, ~round(., 2))
+
+knitr::kable(resumo_desc)
+
+```
+
