@@ -1,0 +1,57 @@
+---
+title: "Quantidades de sistemas constitucionais considerados na análise, por país"
+author: "Guilherme J. S. Militão"
+date: "07-12-2022"
+output:
+  rmdformats::downcute:
+    self_contained: true
+    default_style: "light"
+    downcute_theme: "default"
+---
+<style>
+body {
+text-align: justify}
+</style>
+
+```{r leitura das bases, include=FALSE}
+
+library(tidyverse)
+library(data.table)
+
+
+
+sistemas_total <- read.csv("../dados/sistemas_constitucionais_ccp_v4.csv")
+
+ccp_tratada <- read.csv("../dados/ccp_tratada_valida.csv")
+
+```
+
+## Tabela[^1]:
+
+[^1]: Fonte: elaboração própria a partir dos dados de Elkins, Zachary and Tom Ginsburg. 2022 \"Characteristics of National Constitutions, Version 4.0.\" *Comparative Constitutions Project.* Last modified: October 24, 2022. Available at comparativeconstitutionsproject.org.
+Script de tratamento da base disponível [aqui](https://github.com/gmilitao/trabalho_emp_constitucionalismo/blob/master/R/tratamento_dados.R).  
+
+```{r tabela, echo=FALSE}
+
+tabela1 <- sistemas_total |> 
+  mutate(country = case_when(cowcode == 340 ~ "Serbia / Serbia and Montenegro / Yugoslavia",
+                             TRUE ~ country)) |> 
+  select(country, validos) |> 
+  group_by(country, validos) |> 
+  count() |> 
+  ungroup() |> 
+  pivot_wider(names_from = validos, values_from = n) |> 
+  mutate(`1` = replace_na(`1`, 0)) |> 
+  rowwise() |> 
+  mutate(Total = sum(c_across(2:3))) |> 
+  ungroup() |> 
+  janitor::adorn_totals()
+
+DT::datatable(tabela1, 
+             colnames = c("País", "Sistemas constitucionais não utilizados", "Sistemas constitucionais utilizados", "Total"))
+
+
+
+```
+
+
