@@ -271,6 +271,24 @@ round(mean(delta_emend), 2)
 
 ```
 
+Criando a diferença prevista para a probabilidade de ter emendamento fácil, considerando apenas a varição do emendamento facil anterior, todos os outros controles constantes - usando médias das variáveis:
+
+```{r diferenca prob prev m3 emnd}
+
+plogis(b[1]*1 + b[2]*mean(ccp_tratada$executive_power_index) + b[3]*mean(ccp_tratada$legislative_power_index) + b[4]*mean(ccp_tratada$ate_1913) + b[5]*mean(ccp_tratada$de_1914_a_1945) + b[6]*mean(ccp_tratada$a_partir_1946)) - plogis(b[1]*0 + b[2]*mean(ccp_tratada$executive_power_index) + b[3]*mean(ccp_tratada$legislative_power_index) + b[4]*mean(ccp_tratada$ate_1913) + b[5]*mean(ccp_tratada$de_1914_a_1945) + b[6]*mean(ccp_tratada$a_partir_1946))
+
+
+prop_b1_formula <- 1/(1 + exp(-(b[1]*1 + b[2]*mean(ccp_tratada$executive_power_index) + b[3]*mean(ccp_tratada$legislative_power_index) + b[4]*mean(ccp_tratada$ate_1913) + b[5]*mean(ccp_tratada$de_1914_a_1945) + b[6]*mean(ccp_tratada$a_partir_1946))))
+
+prop_b0_formula <- 1/(1 + exp(-(b[1]*0 + b[2]*mean(ccp_tratada$executive_power_index) + b[3]*mean(ccp_tratada$legislative_power_index) + b[4]*mean(ccp_tratada$ate_1913) + b[5]*mean(ccp_tratada$de_1914_a_1945) + b[6]*mean(ccp_tratada$a_partir_1946))))
+
+prop_b1_formula - prop_b0_formula
+
+
+```
+
+
+
 Equação:
 
 $a = logit^{-1} (1.119 * 1 -0.228 * executive\_power\_index -3.599 * legislative\_power\_index + 1.856 * ate\_1913 + 1.881 * de\_1914\_a\_1945 + 1.115 * a\_partir\_de\_1946)$
@@ -417,6 +435,23 @@ Resultado em odds ratio do coeficiente do jud_review_ant no modelo 3:
 exp(d[1])
 
 ```
+
+Criando a diferença prevista para a probabilidade de ter emendamento fácil, considerando apenas a varição do emendamento facil anterior, todos os outros controles constantes - usando médias das variáveis:
+
+```{r diferenca prob prev m3 jud}
+
+plogis(d[1]*1 + d[2]*mean(ccp_tratada$executive_power_index) + d[3]*mean(ccp_tratada$ate_1913) + d[4]*mean(ccp_tratada$de_1914_a_1945) + d[5]*mean(ccp_tratada$a_partir_1946) + d[6]*mean(ccp_tratada$emend_facil_ant)) - plogis(d[1]*0 + d[2]*mean(ccp_tratada$executive_power_index) + d[3]*mean(ccp_tratada$ate_1913) + d[4]*mean(ccp_tratada$de_1914_a_1945) + d[5]*mean(ccp_tratada$a_partir_1946) + d[6]*mean(ccp_tratada$emend_facil_ant))
+
+
+prop_jud1_formula <- 1/(1 + exp(-(d[1]*1 + d[2]*mean(ccp_tratada$executive_power_index) + d[3]*mean(ccp_tratada$ate_1913) + d[4]*mean(ccp_tratada$de_1914_a_1945) + d[5]*mean(ccp_tratada$a_partir_1946) + d[6]*mean(ccp_tratada$emend_facil_ant))))
+
+prop_jud2_formula <- 1/(1 + exp(-(d[1]*0 + d[2]*mean(ccp_tratada$executive_power_index) + d[3]*mean(ccp_tratada$ate_1913) + d[4]*mean(ccp_tratada$de_1914_a_1945) + d[5]*mean(ccp_tratada$a_partir_1946) + d[6]*mean(ccp_tratada$emend_facil_ant))))
+
+prop_jud1_formula - prop_jud2_formula 
+
+
+```
+
 
 
 ## Implicações da análise empírica
